@@ -1,0 +1,1 @@
+Ocelot ApiGateway => https://learn.microsoft.com/tr-tr/dotnet/architecture/microservices/multi-container-microservice-net-applications/implement-api-gateways-with-ocelot
