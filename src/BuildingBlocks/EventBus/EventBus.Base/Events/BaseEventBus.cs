@@ -13,37 +13,38 @@ namespace EventBus.Base.Events
     public abstract class BaseEventBus : IEventBus
     {
         public readonly IServiceProvider ServiceProvider;
-        public readonly IEventBusSubscriptionManager SubsManager;
-        private EventBusConfig _eventBusConfig;
+        public  IEventBusSubscriptionManager SubsManager;
+        public EventBusConfig EventBusConfig { get; set; }
 
         protected BaseEventBus(IServiceProvider serviceProvider, EventBusConfig eventBusConfig)
         {
             ServiceProvider = serviceProvider;
             SubsManager = new InMemoryEventBusSubscriptionManager(ProcessEventName);
-            _eventBusConfig = eventBusConfig;
+            EventBusConfig = eventBusConfig;
             
         }
 
         public virtual string ProcessEventName(string eventName)
         {
-            if (_eventBusConfig.DeleteEventPrefix)
+            if (EventBusConfig.DeleteEventPrefix)
             {
-                eventName = eventName.TrimStart(_eventBusConfig.EventNamePrefix.ToArray());
+                eventName = eventName.TrimStart(EventBusConfig.EventNamePrefix.ToArray());
             }
-            if (_eventBusConfig.DeleteEventSuffix)
+            if (EventBusConfig.DeleteEventSuffix)
             {
-                eventName = eventName.TrimEnd(_eventBusConfig.EventNameSuffix.ToArray());
+                eventName = eventName.TrimEnd(EventBusConfig.EventNameSuffix.ToArray());
             }
             return eventName;
         }
         public virtual string GetSubName(string eventName)
         {
-            return $"{_eventBusConfig.SubscriberClientAppName}.{ProcessEventName(eventName)}";
+            return $"{EventBusConfig.SubscriberClientAppName}.{ProcessEventName(eventName)}";
         }
 
         public virtual void Dispose()
         {
-            _eventBusConfig = null;
+            EventBusConfig = null;
+            SubsManager.Clear();
         }
 
         public async Task<bool> ProccesEvent(string eventName,string message)
@@ -63,7 +64,7 @@ namespace EventBus.Base.Events
 
                         if (handler == null) continue;
 
-                        var eventType = SubsManager.GetEventTypeByName($"{_eventBusConfig.EventNamePrefix}{eventName}{_eventBusConfig.EventNameSuffix}");
+                        var eventType = SubsManager.GetEventTypeByName($"{EventBusConfig.EventNamePrefix}{eventName}{EventBusConfig.EventNameSuffix}");
                         var integrationEvent = JsonConvert.DeserializeObject(message, eventType);
 
                         var concrateType = typeof(IIntegrationEventHandler<>).MakeGenericType(eventType);
@@ -76,23 +77,16 @@ namespace EventBus.Base.Events
             return procesed;
         }
 
-        public void Publish(IntegrationEvent @event)
-        {
-            throw new NotImplementedException();
-        }
+        public abstract void Publish(IntegrationEvent @event);
 
-        public void Subscribe<T, TH>()
+        public abstract void Subscribe<T, TH>()
             where T : IntegrationEvent
-            where TH : IIntegrationEventHandler<T>
-        {
-            throw new NotImplementedException();
-        }
+            where TH : IIntegrationEventHandler<T>;
 
-        public void UnSubscribe<T, TH>()
+
+        public abstract void UnSubscribe<T, TH>()
             where T : IntegrationEvent
-            where TH : IIntegrationEventHandler<T>
-        {
-            throw new NotImplementedException();
-        }
+            where TH : IIntegrationEventHandler<T>;
+
     }
 }
